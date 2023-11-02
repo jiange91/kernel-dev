@@ -1,0 +1,4 @@
+sudo nsys profile -w true -b dwarf -t cuda,nvtx -o single_96_1_512 -f true --capture-range=cudaProfilerApi --capture-range-end stop --cudabacktrace all:500 --python-backtrace cuda --gpu-metrics-device 0 ../aug-3.9/bin/python3 cmp_single.py 
+
+sudo /usr/local/cuda-11.8/bin/ncu --export mul_96_1_512_shared_opt --force-overwrite --target-processes all --kernel-name multi_token_cached_kv_attention_kernel --launch-count 1 --set full ../aug-3.9/bin/python3 cmp_mul.py 
+sudo /usr/local/cuda-11.8/bin/ncu --export single_1_4_512 --force-overwrite --target-processes all --kernel-name single_query_cached_kv_attention_kernel --launch-count 1 --set full ../aug-3.9/bin/python3 cmp_single.py -s 1 -q 4

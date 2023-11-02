@@ -1,0 +1,6 @@
+*.ncu-rep
+*.nsys-rep
+*.json
+build/
+*.egg-info/
+kernel/*.so
