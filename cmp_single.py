@@ -11,7 +11,7 @@ import argparse
 NUM_SEQ = 1
 
 MAX_Q_LEN = 64
-CTX_LEN = 1088
+CTX_LEN = 1024
 TEST_SEED = 0
 
 
@@ -54,37 +54,29 @@ def run_single_query_att(
         output, query = query, output
     torch.cuda.synchronize()
     torch.cuda.cudart().cudaProfilerStart()
-    attention_ops.single_query_cached_kv_attention(
-        output,
-        query,
-        key_cache,
-        value_cache,
-        head_mapping,
-        scale,
-        block_tables,
-        context_lens,
-        block_size,
-        max_context_len,
-        None,  # ALiBi slopes.
-    )
-    torch.cuda.synchronize()
+    start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    start.record()
+    for _ in range(28):
+        attention_ops.single_query_cached_kv_attention(
+            output,
+            query,
+            key_cache,
+            value_cache,
+            head_mapping,
+            scale,
+            block_tables,
+            context_lens,
+            block_size,
+            max_context_len,
+            None,  # ALiBi slopes.
+        )
+        output, query = query, output
+    end.record()
     torch.cuda.cudart().cudaProfilerStop()
-    output, query = query, output
-    attention_ops.single_query_cached_kv_attention(
-        output,
-        query,
-        key_cache,
-        value_cache,
-        head_mapping,
-        scale,
-        block_tables,
-        context_lens,
-        block_size,
-        max_context_len,
-        None,  # ALiBi slopes.
-    )
-    assert(output.size(0) == num_tokens)
-    return output
+    end.synchronize()
+    print(f'elapsed time: {start.elapsed_time(end)} ms')
+    assert(query.size(0) == num_tokens)
+    return query
 
 
 def test_milti_token_single_query_kernel(
